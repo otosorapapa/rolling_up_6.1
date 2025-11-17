@@ -5035,6 +5035,7 @@ def _render_sales_tab(
                 )
 
         if fig is not None:
+            fig.update_layout(height=600)
             fig = apply_elegant_theme(
                 fig, theme=st.session_state.get("ui_theme", "light")
             )
