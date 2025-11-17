@@ -11779,89 +11779,92 @@ elif page == "ランキング":
         f"{top_contribution_pct:.1f}%",
     )
 
-    chart_cols = st.columns([1.4, 1.0])
-    with chart_cols[0]:
-        top_chart_df = top_df.copy()
-        top_chart_df["表示値"] = top_chart_df["metric_display"]
-        top_chart_df["商品"] = top_chart_df["product_name"].fillna(
-            top_chart_df["product_code"]
-        )
-        top_chart_df["yoy_pct"] = top_chart_df["yoy_pct"].fillna(0)
-        if top_chart_df.empty:
-            st.info("Topランキングを表示するデータが不足しています。")
-        else:
-            fig_top = px.bar(
-                top_chart_df.iloc[::-1],
-                x="表示値",
-                y="商品",
-                orientation="h",
-                color="yoy_pct",
-                color_continuous_scale=["#f94144", "#f8961e", "#90be6d"],
-                labels={
-                    "表示値": metric_col_name,
-                    "商品": "商品",
-                    "yoy_pct": "前年比(%)",
-                },
+    scatter_df = sorted_df.dropna(subset=["contribution_pct", "yoy_pct"])
+    if top_df.empty and scatter_df.empty:
+        st.info("グラフに表示できるランキングデータがありません。フィルターを調整してください。")
+    else:
+        chart_cols = st.columns([1.4, 1.0])
+        with chart_cols[0]:
+            top_chart_df = top_df.copy()
+            top_chart_df["表示値"] = top_chart_df["metric_display"]
+            top_chart_df["商品"] = top_chart_df["product_name"].fillna(
+                top_chart_df["product_code"]
             )
-            fig_top.update_layout(
-                height=420,
-                margin=dict(l=10, r=10, t=30, b=10),
-                coloraxis_colorbar=dict(title="前年比(%)"),
-            )
-            fig_top = apply_elegant_theme(
-                fig_top, theme=st.session_state.get("ui_theme", "light")
-            )
-            render_plotly_with_spinner(
-                fig_top, config=PLOTLY_CONFIG, spinner_text=SPINNER_MESSAGE
-            )
-
-    with chart_cols[1]:
-        scatter_df = sorted_df.dropna(subset=["contribution_pct", "yoy_pct"])
-        if scatter_df.empty:
-            st.info("寄与度と伸長率を描画するデータが不足しています。")
-        else:
-            scatter_df = scatter_df.copy()
-            scatter_df["trend_segment"] = np.where(
-                scatter_df["yoy_pct"] >= 0, "伸長", "減速"
-            )
-            if metric_info["type"] == "currency":
-                size_base = np.maximum(
-                    scatter_df[metric_column].abs() / max(unit_scale, 1.0), 0.1
-                )
-            elif metric_info["type"] == "percent":
-                size_base = np.maximum(
-                    scatter_df["year_sum"].abs() / max(unit_scale, 1.0), 0.1
-                )
+            top_chart_df["yoy_pct"] = top_chart_df["yoy_pct"].fillna(0)
+            if top_chart_df.empty:
+                st.info("Topランキングを表示するデータが不足しています。")
             else:
-                size_base = np.maximum(scatter_df[metric_column].abs(), 0.1)
-            fig_scatter = px.scatter(
-                scatter_df,
-                x="contribution_pct",
-                y="yoy_pct",
-                size=size_base,
-                color="trend_segment",
-                hover_data={
-                    "商品名": scatter_df["product_name"],
-                    "商品コード": scatter_df["product_code"],
-                    metric_col_name: scatter_df["metric_display"],
-                },
-                labels={
-                    "contribution_pct": "寄与度(%)",
-                    "yoy_pct": "前年比(%)",
-                    "trend_segment": "トレンド",
-                },
-                size_max=40,
-            )
-            fig_scatter.update_layout(
-                height=420,
-                margin=dict(l=10, r=10, t=30, b=10),
-            )
-            fig_scatter = apply_elegant_theme(
-                fig_scatter, theme=st.session_state.get("ui_theme", "light")
-            )
-            render_plotly_with_spinner(
-                fig_scatter, config=PLOTLY_CONFIG, spinner_text=SPINNER_MESSAGE
-            )
+                fig_top = px.bar(
+                    top_chart_df.iloc[::-1],
+                    x="表示値",
+                    y="商品",
+                    orientation="h",
+                    color="yoy_pct",
+                    color_continuous_scale=["#f94144", "#f8961e", "#90be6d"],
+                    labels={
+                        "表示値": metric_col_name,
+                        "商品": "商品",
+                        "yoy_pct": "前年比(%)",
+                    },
+                )
+                fig_top.update_layout(
+                    height=420,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                    coloraxis_colorbar=dict(title="前年比(%)"),
+                )
+                fig_top = apply_elegant_theme(
+                    fig_top, theme=st.session_state.get("ui_theme", "light")
+                )
+                render_plotly_with_spinner(
+                    fig_top, config=PLOTLY_CONFIG, spinner_text=SPINNER_MESSAGE
+                )
+
+        with chart_cols[1]:
+            if scatter_df.empty:
+                st.info("寄与度と伸長率を描画するデータが不足しています。")
+            else:
+                scatter_df = scatter_df.copy()
+                scatter_df["trend_segment"] = np.where(
+                    scatter_df["yoy_pct"] >= 0, "伸長", "減速"
+                )
+                if metric_info["type"] == "currency":
+                    size_base = np.maximum(
+                        scatter_df[metric_column].abs() / max(unit_scale, 1.0), 0.1
+                    )
+                elif metric_info["type"] == "percent":
+                    size_base = np.maximum(
+                        scatter_df["year_sum"].abs() / max(unit_scale, 1.0), 0.1
+                    )
+                else:
+                    size_base = np.maximum(scatter_df[metric_column].abs(), 0.1)
+                fig_scatter = px.scatter(
+                    scatter_df,
+                    x="contribution_pct",
+                    y="yoy_pct",
+                    size=size_base,
+                    color="trend_segment",
+                    hover_data={
+                        "商品名": scatter_df["product_name"],
+                        "商品コード": scatter_df["product_code"],
+                        metric_col_name: scatter_df["metric_display"],
+                    },
+                    labels={
+                        "contribution_pct": "寄与度(%)",
+                        "yoy_pct": "前年比(%)",
+                        "trend_segment": "トレンド",
+                    },
+                    size_max=40,
+                )
+                fig_scatter.update_layout(
+                    height=420,
+                    margin=dict(l=10, r=10, t=30, b=10),
+                )
+                fig_scatter = apply_elegant_theme(
+                    fig_scatter, theme=st.session_state.get("ui_theme", "light")
+                )
+                render_plotly_with_spinner(
+                    fig_scatter, config=PLOTLY_CONFIG, spinner_text=SPINNER_MESSAGE
+                )
 
     ranking_table_cols = [
         "順位",
