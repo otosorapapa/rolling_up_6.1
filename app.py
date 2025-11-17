@@ -12102,10 +12102,6 @@ elif page == "比較ビュー":
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        '<section class="chart-card" id="line-compare">', unsafe_allow_html=True
-    )
-
     st.markdown('<div class="chart-toolbar">', unsafe_allow_html=True)
     c1, c2, c3, c4, c5 = st.columns([1.2, 1.6, 1.1, 1.0, 0.9])
     with c1:
@@ -12464,7 +12460,6 @@ elif page == "比較ビュー":
         band_range=(low, high),
     )
     st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</section>", unsafe_allow_html=True)
 
     st.caption(
         "凡例クリックで表示切替、ダブルクリックで単独表示。ドラッグでズーム/パン、右上メニューからPNG/CSV取得可。"
