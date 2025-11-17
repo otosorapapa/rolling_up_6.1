@@ -13041,7 +13041,10 @@ elif page == "相関分析":
                 fig_corr, theme=st.session_state.get("ui_theme", "light")
             )
             render_plotly_with_spinner(
-                fig_corr, config=PLOTLY_CONFIG, spinner_text=SPINNER_MESSAGE
+                fig_corr,
+                config=PLOTLY_CONFIG,
+                spinner_text=SPINNER_MESSAGE,
+                height=700,
             )
 
             st.subheader("ペア・エクスプローラ")
@@ -13265,6 +13268,7 @@ elif page == "相関分析":
                                         fig_corr,
                                         config=PLOTLY_CONFIG,
                                         spinner_text=SPINNER_MESSAGE,
+                                        height=700,
                                     )
 
                                     st.subheader("SKUペア・エクスプローラ")
