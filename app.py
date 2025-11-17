@@ -12403,6 +12403,12 @@ elif page == "比較ビュー":
 
     df_main = df_long[df_long["product_code"].isin(main_codes)]
 
+    if df_main.empty:
+        st.info("該当する系列がありません。条件を見直してください。")
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</section>", unsafe_allow_html=True)
+        st.stop()
+
     with ai_summary_container:
         ai_on = st.toggle(
             "AIサマリー",
@@ -12411,7 +12417,7 @@ elif page == "比較ビュー":
             help="要約・コメント・自動説明を表示（オンデマンド計算）",
         )
         with st.expander("AIサマリー", expanded=ai_on):
-            if ai_on and not df_main.empty:
+            if ai_on:
                 pos = len(codes_steep)
                 mtn = len(codes_mtn & set(main_codes))
                 val = len(codes_val & set(main_codes))
