@@ -9327,7 +9327,7 @@ if year_df is not None and not year_df.empty:
                 "表示件数",
                 min_value=5,
                 max_value=30,
-                value=int(st.session_state.get("sidebar_rank_limit", 10)),
+                value=int(st.session_state.get("sidebar_rank_limit", 20)),
                 step=1,
                 help="Top/Bottomランキングで表示する件数です。",
                 key="sidebar_rank_limit",
@@ -11530,7 +11530,7 @@ elif page == "ランキング":
     metric = sidebar_state.get("rank_metric", "year_sum")
     order = sidebar_state.get("rank_order", "desc")
     hide_zero = sidebar_state.get("rank_hide_zero", True)
-    top_limit = int(sidebar_state.get("rank_limit") or 10)
+    top_limit = int(sidebar_state.get("rank_limit") or 20)
 
     ai_on = st.toggle(
         "AIサマリー",
