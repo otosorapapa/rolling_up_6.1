@@ -11726,6 +11726,14 @@ elif page == "ランキング":
         metric_col_name = f"{metric_label} (%)"
     else:
         metric_col_name = metric_label
+    rank_label = "順位"
+    name_label = "商品名"
+    yoy_pct_label = "前年同月比(%)"
+    yoy_icon_label = "前年比アイコン"
+    delta_label = f"前月差({unit_value})"
+    delta_badge_label = "前月差アイコン"
+    contribution_label = "寄与度(%)"
+    year_sum_label = f"年計({unit_value})"
 
     display_df = (
         sorted_df[
