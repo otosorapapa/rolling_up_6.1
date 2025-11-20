@@ -19,6 +19,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from PIL import Image, ImageChops
 from ai_features import (
     summarize_dataframe,
     generate_comment,
@@ -207,6 +208,24 @@ def _derive_category_label(name: str) -> str:
     if trimmed:
         return trimmed
     return cleaned[:6] or "未分類"
+
+
+def _trim_png_whitespace(png_bytes: bytes) -> bytes:
+    try:
+        with Image.open(io.BytesIO(png_bytes)) as im:
+            if im.mode != "RGBA":
+                im = im.convert("RGBA")
+            bg = Image.new("RGBA", im.size, im.getpixel((0, 0)))
+            diff = ImageChops.difference(im, bg)
+            bbox = diff.getbbox()
+            if bbox:
+                trimmed = im.crop(bbox)
+                buf = io.BytesIO()
+                trimmed.save(buf, format="PNG")
+                return buf.getvalue()
+    except Exception:
+        return png_bytes
+    return png_bytes
 
 
 def _derive_department_label(
@@ -12493,7 +12512,7 @@ zスコア：全SKUの傾き分布に対する標準化。|z|≥1.5で急勾配�
             guide="比較ビューのCSVを共有してチーム分析に役立てましょう。",
         )
     try:
-        png_bytes = fig.to_image(format="png")
+        png_bytes = _trim_png_whitespace(fig.to_image(format="png"))
         png_clicked = st.download_button(
             "PNGエクスポート",
             data=png_bytes,
