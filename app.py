@@ -11779,6 +11779,12 @@ elif page == "ランキング":
         display_df[metric_col_name] = display_df[metric_col_name].round(1)
     else:
         display_df[metric_col_name] = display_df[metric_col_name].round(2)
+    # Create cleanly named columns for clearer UI rendering
+    display_df[yoy_pct_label] = sorted_df["yoy_pct"].round(1).values
+    display_df[yoy_icon_label] = sorted_df["yoy_badge"].values
+    display_df[delta_label] = sorted_df["delta_scaled"].round(0).values
+    display_df[delta_badge_label] = sorted_df["delta_badge"].values
+    display_df[contribution_label] = sorted_df["contribution_pct"].round(1).values
 
     top_df = sorted_df.head(top_limit)
     bottom_df = sorted_df.tail(top_limit)
