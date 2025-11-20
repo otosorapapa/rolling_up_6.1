@@ -1626,6 +1626,7 @@ section[id]{ scroll-margin-top:calc(64px + var(--space-2)); }
   border-radius:14px;
   padding:var(--space-2) var(--space-3);
   box-shadow:0 12px 28px rgba(var(--primary-rgb,11,31,59),0.08);
+  margin-bottom:var(--space-1, 0.5rem) !important;
 }
 [data-testid="stMetricValue"]{
   color:var(--accent-strong);
