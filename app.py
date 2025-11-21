@@ -73,6 +73,8 @@ BORDER_COLOR = get_color("border")
 BORDER_STRONG = get_color("border", "strong")
 SUCCESS_COLOR = get_color("success")
 SUCCESS_RGB = get_color_rgb("success")
+SUCCESS_SOFT = lighten(SUCCESS_COLOR, 0.45)
+SUCCESS_DEEP = darken(SUCCESS_COLOR, 0.25)
 WARNING_COLOR = get_color("warning")
 WARNING_RGB = get_color_rgb("warning")
 ERROR_COLOR = get_color("error")
@@ -11835,7 +11837,7 @@ elif page == "ランキング":
                     y="商品",
                     orientation="h",
                     color="yoy_pct",
-                    color_continuous_scale=["#f94144", "#f8961e", "#90be6d"],
+                    color_continuous_scale=[SUCCESS_SOFT, SUCCESS_COLOR, SUCCESS_DEEP],
                     labels={
                         "表示値": metric_col_name,
                         "商品": "商品",
