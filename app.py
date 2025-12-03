@@ -548,84 +548,8 @@ def render_clickable_kpi_cards(
     if not cards:
         return
 
-    st.markdown(
-        f"""
-        <style>
-        .dashboard-kgi-grid{{
-          display:grid;
-          grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-          gap:var(--space-2);
-          margin-bottom:var(--space-3);
-        }}
-        .dashboard-kgi-card{{
-          position:relative;
-          display:block;
-          padding:var(--space-2) var(--space-3);
-          border-radius:{CARD_RADIUS}px;
-          border:1px solid {BORDER_COLOR};
-          background:{SURFACE_COLOR};
-          color:{TEXT_COLOR};
-          text-decoration:none;
-          box-shadow:{CARD_SHADOW};
-          transition:transform .18s ease, box-shadow .18s ease;
-        }}
-        .dashboard-kgi-card:hover,
-        .dashboard-kgi-card:focus{{
-          transform:translateY(-2px);
-          box-shadow:0 18px 32px rgba({PRIMARY_RGB},0.18);
-          text-decoration:none;
-        }}
-        .dashboard-kgi-card__label{{
-          font-size:0.75rem;
-          letter-spacing:.12em;
-          text-transform:uppercase;
-          color:{MUTED_COLOR};
-          margin-bottom:var(--space-1);
-        }}
-        .dashboard-kgi-card__value{{
-          font-family:{FONT_NUMERIC};
-          font-size:1.8rem;
-          font-weight:700;
-          margin-bottom:var(--space-1);
-        }}
-        .dashboard-kgi-card__delta{{
-          font-size:0.95rem;
-          font-weight:600;
-        }}
-        .dashboard-kgi-card__delta.is-up{{color:{SUCCESS_COLOR};}}
-        .dashboard-kgi-card__delta.is-down{{color:{ERROR_COLOR};}}
-        .dashboard-kgi-card__caption{{
-          margin-top:0.45rem;
-          font-size:0.85rem;
-          color:{MUTED_COLOR};
-        }}
-        .dashboard-kgi-card.is-accent{{
-          border-color:{ACCENT_COLOR};
-          background:linear-gradient(135deg,{ACCENT_SOFT},{ACCENT_COLOR});
-          color:var(--btn-tx);
-        }}
-        .dashboard-kgi-card.is-accent .dashboard-kgi-card__label,
-        .dashboard-kgi-card.is-accent .dashboard-kgi-card__caption{{
-          color:var(--btn-tx);
-        }}
-        .dashboard-kgi-card.is-primary{{
-          border-color:{PRIMARY_COLOR};
-          background:linear-gradient(135deg,{PRIMARY_LIGHT},{PRIMARY_COLOR});
-          color:var(--btn-tx);
-        }}
-        .dashboard-kgi-card.is-primary .dashboard-kgi-card__label,
-        .dashboard-kgi-card.is-primary .dashboard-kgi-card__caption{{
-          color:var(--btn-tx);
-        }}
-        .dashboard-kgi-card.is-success{{
-          border-color:{SUCCESS_COLOR};
-          background:linear-gradient(135deg,{lighten(SUCCESS_COLOR,0.55)},{SUCCESS_COLOR});
-          color:#0b1f3b;
-        }}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Note: Styles are now handled globally in the main CSS block.
+    # We use the new .kpi-card classes with clickable behavior.
 
     base_params = _get_query_params()
     base_pairs: List[Tuple[str, str]] = []
@@ -654,29 +578,37 @@ def render_clickable_kpi_cards(
         if tab_target:
             params.append((query_key, tab_target))
         href = "?" + urlencode(params)
-        delta_cls = ""
+        
+        delta_cls = "neutral"
         if delta:
             delta_str = str(delta)
             if delta_str.startswith("+") or "▲" in delta_str:
-                delta_cls = " is-up"
+                delta_cls = "positive"
             elif delta_str.startswith("-") or "▼" in delta_str:
-                delta_cls = " is-down"
+                delta_cls = "negative"
+        
         inner = (
-            f"<span class='dashboard-kgi-card__label'>{label}</span>"
-            f"<span class='dashboard-kgi-card__value'>{value}</span>"
+            f"<span class='kpi-card__label'>{label}</span>"
+            f"<span class='kpi-card__value'>{value}</span>"
         )
         if delta_html:
             inner += (
-                f"<span class='dashboard-kgi-card__delta{delta_cls}'>{delta_html}</span>"
+                f"<span class='kpi-card__delta {delta_cls}'>{delta_html}</span>"
             )
         if caption:
-            inner += f"<span class='dashboard-kgi-card__caption'>{caption}</span>"
+            inner += f"<span class='text-sm text-muted mt-2'>{caption}</span>"
+        
+        # Wrap in an anchor tag for clickability
         blocks.append(
-            f"<a class='dashboard-kgi-card {variant}' href='{href}'>{inner}</a>"
+            f"<a class='kpi-card {variant}' href='{href}' style='text-decoration: none; color: inherit; display: flex; flex-direction: column;'>{inner}</a>"
         )
 
     st.markdown(
-        "<div class='dashboard-kgi-grid'>" + "".join(blocks) + "</div>",
+        f"""
+        <div style='display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;'>
+            {"".join(blocks)}
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
