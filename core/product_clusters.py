@@ -28,14 +28,21 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import networkx as nx
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
-from networkx import Graph
-from networkx.algorithms.community import greedy_modularity_communities, modularity
+
+try:
+    import networkx as nx
+    from networkx import Graph
+    from networkx.algorithms.community import greedy_modularity_communities, modularity
+except (ImportError, AttributeError):
+    nx = None
+    Graph = object
+    greedy_modularity_communities = None
+    modularity = None
 from scipy.cluster import hierarchy
 from scipy.spatial.distance import squareform
 from sklearn.metrics import pairwise_distances
@@ -419,6 +426,10 @@ def _section_header(title: str, subtitle: str, icon: str = "") -> None:
         """,
         unsafe_allow_html=True,
     )
+
+    if nx is None:
+        st.error("NetworkX ライブラリの読み込みに失敗しました (Python 3.14 非互換の可能性があります)。\n併買分析機能は現在利用できません。")
+        return
 
 
 def _format_product(product_id: str, name_map: Dict[str, str]) -> str:
