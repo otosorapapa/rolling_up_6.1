@@ -5020,7 +5020,19 @@ def _render_sales_tab(
                 help="グラフタイプを切り替えて異常値や注目SKUを見つけやすくします。",
                 label_visibility="collapsed",
             )
+            ai_summary_on = st.toggle(
+                "AIサマリー",
+                value=False,
+                key="sales_trend_ai",
+                help="表示中データの要約・考察をAIが生成します。",
+            )
     st.markdown("</div>", unsafe_allow_html=True)
+    
+    if monthly_trend is not None and not monthly_trend.empty:
+        with st.expander("AIサマリー", expanded=st.session_state.get("sales_trend_ai", False)):
+             if st.session_state.get("sales_trend_ai", False):
+                 st.info(summarize_dataframe(monthly_trend))
+
     st.markdown(
         '<div class="dashboard-chart-card__body">',
         unsafe_allow_html=True,
@@ -5696,6 +5708,19 @@ def _render_gross_profit_tab(
         metric_cols[2].metric("粗利年計", "—")
 
     st.markdown("##### 粗利額と粗利率の推移")
+    
+    # AI Summary Toggle for Gross Profit
+    ai_gross_on = st.toggle(
+        "AIサマリー",
+        value=False,
+        key="gross_trend_ai",
+        help="粗利トレンドの要約・考察をAIが生成します。",
+    )
+    if not gross_trend.empty:
+        with st.expander("AIサマリー", expanded=ai_gross_on):
+             if ai_gross_on:
+                 st.info(summarize_dataframe(gross_trend))
+
     if gross_trend.empty:
         render_status_message(
             "empty",
