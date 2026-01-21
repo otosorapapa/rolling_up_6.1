@@ -5094,7 +5094,7 @@ def _render_sales_tab(
             fig.update_yaxes(title=f"売上 ({unit})", tickformat=",.0f")
             fig.update_xaxes(title="月", tickformat="%Y-%m", dtick="M1")
             fig.update_layout(
-                height=600,
+                height=800,
                 margin=dict(l=10, r=10, t=60, b=10),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
             )
@@ -5760,7 +5760,7 @@ def _render_gross_profit_tab(
                 )
             )
         fig_amount.update_layout(
-            height=500,
+            height=650,
             margin=dict(l=10, r=10, t=40, b=10),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
         )
@@ -5796,7 +5796,7 @@ def _render_gross_profit_tab(
                 )
             )
         fig_margin.update_layout(
-            height=400,
+            height=500,
             margin=dict(l=10, r=10, t=10, b=10),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0.0),
         )
