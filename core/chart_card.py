@@ -773,6 +773,8 @@ def build_chart_card(
     }
     if config:
         base_config.update(config)
+    if config:
+        base_config.update(config)
     render_plotly_with_spinner(
         fig,
         use_container_width=True,

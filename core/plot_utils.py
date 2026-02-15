@@ -385,6 +385,7 @@ def render_plotly_with_spinner(
         container.plotly_chart(
             fig,
             use_container_width=use_container_width,
+            height=height if height else 220,
             config=merged_config,
             **kwargs,
         )

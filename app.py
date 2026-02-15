@@ -12675,6 +12675,7 @@ elif page == "比較ビュー":
         multi_mode=True,
         tb=tb_common,
         band_range=(low, high),
+        height=900,
     )
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -12846,7 +12847,7 @@ elif page == "SKU詳細":
             selected_codes=[code],
             multi_mode=False,
             tb=tb,
-            height=600,
+            height=900,
         )
         chart_rendered = True
         modal_codes = [code]
@@ -12921,7 +12922,7 @@ elif page == "SKU詳細":
                 selected_codes=codes,
                 multi_mode=True,
                 tb=tb,
-                height=600,
+                height=900,
             )
             chart_rendered = True
             modal_codes = codes
