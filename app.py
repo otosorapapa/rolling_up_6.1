@@ -4406,7 +4406,7 @@ def apply_tour_highlight(step: Optional[Dict[str, str]]) -> None:
     script = f"""
     <script>
     const STEP = {json.dumps(payload, ensure_ascii=False)};
-    const normalize = (text) => (text || '').replace(/\s+/g, ' ').trim();
+    const normalize = (text) => (text || '').replace(/\\s+/g, ' ').trim();
     const doc = window.parent.document;
     const run = () => {{
         const root = doc.documentElement;
@@ -5031,7 +5031,8 @@ def _render_sales_tab(
     if monthly_trend is not None and not monthly_trend.empty:
         with st.expander("AIサマリー", expanded=st.session_state.get("sales_trend_ai", False)):
              if st.session_state.get("sales_trend_ai", False):
-                 st.info(summarize_dataframe(monthly_trend))
+                 with st.spinner("AIサマリーを生成中…"):
+                     st.info(summarize_dataframe(monthly_trend))
 
     st.markdown(
         '<div class="dashboard-chart-card__body">',
@@ -5719,7 +5720,8 @@ def _render_gross_profit_tab(
     if not gross_trend.empty:
         with st.expander("AIサマリー", expanded=ai_gross_on):
              if ai_gross_on:
-                 st.info(summarize_dataframe(gross_trend))
+                 with st.spinner("AIサマリーを生成中…"):
+                     st.info(summarize_dataframe(gross_trend))
 
     if gross_trend.empty:
         render_status_message(
@@ -7703,7 +7705,7 @@ SIDEBAR_PAGES = [
         "key": "dashboard",
         "page": "ダッシュボード",
         "icon": "🏠",
-        "title": "ホーム",
+        "title": "ダッシュボード",
         "tagline": "分析ダッシュボード",
         "tooltip": "主要KPIとトレンドを俯瞰できるダッシュボードです。",
         "category": "report",
@@ -7766,7 +7768,7 @@ SIDEBAR_PAGES = [
         "key": "import",
         "page": "データ取込",
         "icon": "📥",
-        "title": "データ管理",
+        "title": "データ取込",
         "tagline": "CSV/Excelアップロードとテンプレート管理",
         "tooltip": "CSV/Excelの取込、テンプレート選択、デモデータ読込みをこの画面に集約しました。",
         "category": "input",
@@ -7826,10 +7828,10 @@ page_lookup = {page["key"]: page["page"] for page in SIDEBAR_PAGES}
 PRIMARY_NAV_MENU = [
     {
         "key": "dashboard",
-        "label": SIDEBAR_PAGE_LOOKUP["executive"]["title"],
-        "icon": SIDEBAR_PAGE_LOOKUP["executive"].get("icon", "💼"),
-        "description": "KGI/KPIを1画面で俯瞰できる経営ダッシュボードです。",
-        "pages": ["executive"],
+        "label": "ダッシュボード",
+        "icon": SIDEBAR_PAGE_LOOKUP["dashboard"].get("icon", "🏠"),
+        "description": "経営ダッシュボードと分析ダッシュボードで主要KPIを俯瞰します。",
+        "pages": ["executive", "dashboard"],
     },
     {
         "key": "ranking",
@@ -7843,7 +7845,7 @@ PRIMARY_NAV_MENU = [
         "label": "分析ツール",
         "icon": SIDEBAR_PAGE_LOOKUP["compare"].get("icon", "🔍"),
         "description": "比較ビューやSKU詳細、相関分析などの深掘り分析を行います。",
-        "pages": ["dashboard", "compare", "detail", "correlation", "category"],
+        "pages": ["compare", "detail", "correlation", "category"],
     },
     {
         "key": "data",
@@ -9249,8 +9251,9 @@ if len(primary_pages) > 1:
     if current_sub_value not in primary_pages:
         current_sub_value = primary_pages[0]
         st.session_state[sub_state_key] = current_sub_value
+    sub_label = f"{primary_item.get('label', '機能')}を選択"
     target_page_key = st.sidebar.selectbox(
-        "表示する機能",
+        sub_label,
         primary_pages,
         key=sub_state_key,
         format_func=lambda key: NAV_TITLE_LOOKUP.get(key, key),
@@ -9585,7 +9588,8 @@ with st.sidebar.expander("AIコパイロット", expanded=False):
             st.warning("質問を入力してください。")
         else:
             context = build_copilot_context(focus, end_month=latest_month)
-            answer = _ai_answer(question, context)
+            with st.spinner("AIが分析中…"):
+                answer = _ai_answer(question, context)
             st.session_state.copilot_answer = answer
             st.session_state.copilot_context = context
     if st.session_state.copilot_answer:
@@ -10004,7 +10008,10 @@ Import completed. Open the dashboard pages to review the visuals."""
                             st.session_state.get("import_wizard_step", 1), 4
                         )
                     except Exception as e:
-                        st.exception(e)
+                        st.error(
+                            f"変換エラーが発生しました: {e}\n"
+                            "列名・数値形式・文字コードを確認してから再度お試しください。"
+                        )
 
             st.session_state.import_layout_expanded = False
         else:
@@ -10121,9 +10128,27 @@ elif page == "経営ダッシュボード":
         icon=":bar_chart:",
     )
 
+    _session_year = st.session_state.get("data_year")
+    _has_session_data = _session_year is not None and not getattr(_session_year, "empty", True)
+    if _has_session_data:
+        st.info(
+            "このページはデモ用サンプルデータ（data/sales.csv）を表示しています。"
+            "取り込み済みのデータを確認するには **ダッシュボード** ページをご利用ください。",
+            icon="ℹ️",
+        )
+
     data_path = Path("data/sales.csv")
     if not data_path.exists():
-        st.error("売上データ (data/sales.csv) が見つかりません。")
+        if _has_session_data:
+            st.warning(
+                "デモデータ（data/sales.csv）が見つかりません。"
+                "取り込み済みデータの分析は **ダッシュボード** をご利用ください。"
+            )
+        else:
+            st.error(
+                "デモデータ（data/sales.csv）が見つかりません。"
+                "データを利用するには **データ取込** ページからCSV/Excelをアップロードしてください。"
+            )
         st.stop()
 
     df_sales = pd.read_csv(data_path)
@@ -12169,9 +12194,9 @@ elif page == "ランキング":
                 if not top_df.empty
                 else 0.0,
             }
-            st.markdown(
-                f"**推奨アクション**: {_ai_actions(ai_metrics, focus=f'{end_m} {metric_label}')}"
-            )
+            with st.spinner("AIが分析中…"):
+                ai_actions_text = _ai_actions(ai_metrics, focus=f'{end_m} {metric_label}')
+            st.markdown(f"**推奨アクション**: {ai_actions_text}")
             prompt_top = top_df.head(min(5, len(top_df)))[
                 ["product_name", metric_column, "yoy"]
             ].copy()
@@ -12199,7 +12224,9 @@ elif page == "ランキング":
                 prompt_text += "\nTopサマリー:\n" + prompt_top.to_markdown(index=False)
             if not prompt_bottom.empty:
                 prompt_text += "\nBottomサマリー:\n" + prompt_bottom.to_markdown(index=False)
-            st.caption(_ai_comment(prompt_text))
+            with st.spinner("AIがコメントを生成中…"):
+                ai_comment_text = _ai_comment(prompt_text)
+            st.caption(ai_comment_text)
 
     export_df = sorted_df[
         [
@@ -12634,20 +12661,21 @@ elif page == "比較ビュー":
                 pos = len(codes_steep)
                 mtn = len(codes_mtn & set(main_codes))
                 val = len(codes_val & set(main_codes))
-                explain = _ai_explain(
-                    {
-                        "対象SKU数": len(main_codes),
-                        "中央値(年計)": float(
-                            snapshot_disp.loc[
-                                snapshot_disp["product_code"].isin(main_codes),
-                                "year_sum_disp",
-                            ].median()
-                        ),
-                        "急勾配数": pos,
-                        "山数": mtn,
-                        "谷数": val,
-                    }
-                )
+                with st.spinner("AIサマリーを生成中…"):
+                    explain = _ai_explain(
+                        {
+                            "対象SKU数": len(main_codes),
+                            "中央値(年計)": float(
+                                snapshot_disp.loc[
+                                    snapshot_disp["product_code"].isin(main_codes),
+                                    "year_sum_disp",
+                                ].median()
+                            ),
+                            "急勾配数": pos,
+                            "山数": mtn,
+                            "谷数": val,
+                        }
+                    )
                 st.info(f"**AI比較コメント**：{explain}")
 
     tb_common = dict(
@@ -12726,7 +12754,7 @@ zスコア：全SKUの傾き分布に対する標準化。|z|≥1.5で急勾配�
                 guide="可視化画像を資料に貼り付けて共有できます。",
             )
     except Exception:
-        pass
+        st.caption("PNGエクスポートは利用できません（kaleido が未インストールの可能性があります）。")
 
     with st.expander("分布（オプション）", expanded=False):
         hist_fig = apply_elegant_theme(
@@ -12868,19 +12896,20 @@ elif page == "SKU詳細":
 
         with st.expander("AIサマリー", expanded=ai_on):
             if ai_on and not row.empty:
-                st.info(
-                    _ai_explain(
-                        {
-                            "年計": (
-                                float(rr["year_sum"])
-                                if not pd.isna(rr["year_sum"])
-                                else 0.0
-                            ),
-                            "YoY": float(rr["yoy"]) if not pd.isna(rr["yoy"]) else 0.0,
-                            "Δ": float(rr["delta"]) if not pd.isna(rr["delta"]) else 0.0,
-                        }
+                with st.spinner("AIサマリーを生成中…"):
+                    st.info(
+                        _ai_explain(
+                            {
+                                "年計": (
+                                    float(rr["year_sum"])
+                                    if not pd.isna(rr["year_sum"])
+                                    else 0.0
+                                ),
+                                "YoY": float(rr["yoy"]) if not pd.isna(rr["yoy"]) else 0.0,
+                                "Δ": float(rr["delta"]) if not pd.isna(rr["delta"]) else 0.0,
+                            }
+                        )
                     )
-                )
 
         st.subheader("メモ / タグ")
         note = st.text_area(
@@ -13110,7 +13139,8 @@ elif page == "異常検知":
                 ai_df = view[
                     ["product_name", "month", "score", "year_sum", "yoy", "delta"]
                 ].fillna(0)
-                st.info(_ai_anomaly_report(ai_df))
+                with st.spinner("AIが異常サマリーを生成中…"):
+                    st.info(_ai_anomaly_report(ai_df))
 
         option_labels = [
             f"{row['product_code']}｜{row['product_name'] or row['product_code']}｜{row['month']}"
@@ -13235,14 +13265,15 @@ elif page == "相関分析":
             with st.expander("AIサマリー", expanded=ai_on):
                 if ai_on and not tbl.empty:
                     r_mean = float(tbl["r"].abs().mean())
-                    st.info(
-                        _ai_explain(
-                            {
-                                "有意本数": int((tbl["sig"] == "有意(95%)").sum()),
-                                "平均|r|": r_mean,
-                            }
+                    with st.spinner("AIサマリーを生成中…"):
+                        st.info(
+                            _ai_explain(
+                                {
+                                    "有意本数": int((tbl["sig"] == "有意(95%)").sum()),
+                                    "平均|r|": r_mean,
+                                }
+                            )
                         )
-                    )
 
             st.subheader("相関ヒートマップ")
             st.caption("右上=強い正、左下=強い負、白=関係薄")
@@ -13448,16 +13479,17 @@ elif page == "相関分析":
                                     with st.expander("AIサマリー", expanded=ai_on):
                                         if ai_on and not tbl.empty:
                                             r_mean = float(tbl["r"].abs().mean())
-                                            st.info(
-                                                _ai_explain(
-                                                    {
-                                                        "有意本数": int(
-                                                            (tbl["sig"] == "有意(95%)").sum()
-                                                        ),
-                                                        "平均|r|": r_mean,
-                                                    }
+                                            with st.spinner("AIサマリーを生成中…"):
+                                                st.info(
+                                                    _ai_explain(
+                                                        {
+                                                            "有意本数": int(
+                                                                (tbl["sig"] == "有意(95%)").sum()
+                                                            ),
+                                                            "平均|r|": r_mean,
+                                                        }
+                                                    )
                                                 )
-                                            )
 
                                     st.subheader("相関ヒートマップ")
                                     st.caption(
@@ -13703,12 +13735,20 @@ elif page == "保存ビュー":
         st.info("保存済みビューはありません。")
     else:
         for k, v in st.session_state.saved_views.items():
-            st.write(f"**{k}**: {json.dumps(v, ensure_ascii=False)}")
-            if st.button(f"適用: {k}"):
-                st.session_state.settings.update(v.get("settings", {}))
-                st.session_state.compare_params = v.get("compare", {})
-                st.session_state.compare_results = None
-                st.success(f"ビュー「{k}」を適用しました。")
+            with st.expander(f"📋 {k}", expanded=False):
+                settings_data = v.get("settings", {})
+                compare_data = v.get("compare", {})
+                if settings_data:
+                    st.caption("設定")
+                    st.json(settings_data, expanded=False)
+                if compare_data:
+                    st.caption("比較条件")
+                    st.json(compare_data, expanded=False)
+                if st.button("このビューを適用", key=f"apply_view_{k}"):
+                    st.session_state.settings.update(settings_data)
+                    st.session_state.compare_params = compare_data
+                    st.session_state.compare_results = None
+                    st.success(f"ビュー「{k}」を適用しました。")
 
 # 11) ヘルプ/チュートリアル
 elif page == "ヘルプ/チュートリアル":
@@ -13721,7 +13761,7 @@ elif page == "ヘルプ/チュートリアル":
     st.markdown(
         """
         ### 1. クイックスタート
-        1. **データ管理**ページでテンプレートを選択し、CSV/Excelをアップロードします。
+        1. **データ取込**ページでテンプレートを選択し、CSV/Excelをアップロードします。
         2. 取り込みが完了したら、サンプルデータやAIサマリーで検証しましょう。
         3. ダッシュボードでフィルタを変更すると、KGI・KPI・トレンドが一括で更新されます。
         """
@@ -13740,7 +13780,7 @@ elif page == "ヘルプ/チュートリアル":
     with st.expander("FAQ / よくある質問", expanded=False):
         st.markdown(
             """
-            - **データをやり直したい場合は？** → データ管理ページで別ファイルを再アップロードしてください。
+            - **データをやり直したい場合は？** → データ取込ページで別ファイルを再アップロードしてください。
             - **指標カードの単位を変えたい** → ダッシュボード右上の「単位」セレクトで即時切り替えが可能です。
             - **トレンドグラフをエクスポートできますか？** → 各グラフ右上のメニューからPNG出力が利用できます。
             """
