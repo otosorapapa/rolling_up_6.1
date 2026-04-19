@@ -2687,6 +2687,495 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ===== UI/UX Polish Layer (v6.2) =====
+# 偽アフォーダンス除去・フォーカス可視性・階層強化・コントラスト改善を目的とした
+# 上書き専用レイヤー。既存スタイルの後段に配置し、破壊的変更を避けつつ整える。
+st.markdown(
+    """
+    <style>
+    /* ---- 1. 偽アフォーダンス除去（hover で浮く非操作カードの沈静化） ----
+       Streamlit の st.metric / mck-metric-card / mini-chart-card / mck-alert は
+       クリック可能ではないため、translateY/translateX を削除し、影変化のみで
+       "注目されている" 程度の静かな反応に留める。クリック可能な要素
+       (dashboard-kgi-card, mck-button, tour-step-guide__item) は元のまま。 */
+    [data-testid="stMetric"]:hover,
+    .mck-metric-card:hover,
+    .mini-chart-card:hover,
+    .dashboard-chart-card:hover{
+      transform:none !important;
+    }
+    .mck-alert:hover{
+      transform:none !important;
+    }
+    /* has-tooltip が付いている mck-metric-card のみ、視覚的フィードバック強化 */
+    .mck-metric-card.has-tooltip:hover{
+      border-color:color-mix(in srgb, var(--border), var(--accent) 25%) !important;
+    }
+
+    /* ---- 2. フォーカスリング復活（WCAG 2.4.7 Focus Visible） ----
+       タブの :focus で outline:none が指定されキーボード操作者を切り捨てていた。
+       focus-visible に限定して可視化（マウスクリック時はリング非表示）。 */
+    .stTabs [data-baseweb="tab"]:focus-visible{
+      outline:2px solid var(--focus, #3b82f6) !important;
+      outline-offset:2px !important;
+      box-shadow:none !important;
+    }
+    .tour-step-guide__item:focus-visible,
+    .dashboard-kgi-card:focus-visible,
+    .mck-button:focus-visible,
+    a.chip:focus-visible{
+      outline:3px solid rgba(59,130,246,0.55) !important;
+      outline-offset:3px !important;
+    }
+
+    /* ---- 3. KPI値のフォントサイズ階層を統一 ----
+       dashboard-kpi-card 1.62rem / mck-metric-card 1.75rem / stMetric 1.875rem
+       の三段バラツキを「主役=1.875rem / 副次=1.6rem」の2段に整理。 */
+    [data-testid="stMetricValue"]{
+      font-size:1.875rem !important;
+      line-height:1.15 !important;
+      letter-spacing:-0.01em !important;
+    }
+    .mck-metric-card__value{
+      font-size:1.75rem;
+      line-height:1.15;
+      letter-spacing:-0.01em;
+    }
+    .dashboard-kpi-card__value,
+    .dashboard-kgi-card__value{
+      font-size:1.6rem;
+      line-height:1.15;
+      letter-spacing:-0.01em;
+    }
+
+    /* ---- 4. 日本語UIに不要な uppercase を解除 ----
+       日本語では text-transform:uppercase は全幅文字で意図と異なる見た目に。
+       subtitle/label 系から解除し、letter-spacing で圧力感を残す。 */
+    [data-testid="stMetricLabel"],
+    .mck-metric-card__subtitle,
+    .dashboard-kpi-card__title,
+    .dashboard-kgi-card__label,
+    .mck-hero__stat-label,
+    .mck-hero__eyebrow,
+    .tour-banner__progress,
+    .tour-progress__meta,
+    h6{
+      text-transform:none !important;
+      letter-spacing:0.04em !important;
+    }
+    .mck-hero__eyebrow{
+      letter-spacing:0.16em !important;
+    }
+
+    /* ---- 5. サイドバー可読性改善（コントラスト 4.5:1 以上確保） ---- */
+    [data-testid="stSidebar"] label.nav-pill .nav-pill__desc{
+      color:rgba(255,255,255,0.92) !important;
+    }
+    [data-testid="stSidebar"] .sidebar-app-brand__caption{
+      color:rgba(255,255,255,0.94) !important;
+    }
+    [data-testid="stSidebar"] .sidebar-legend__desc{
+      color:rgba(255,255,255,0.88) !important;
+    }
+    [data-testid="stSidebar"] .mck-sidebar-summary{
+      color:#f7fbff !important;
+    }
+
+    /* ---- 6. タブ選択状態の視認性強化（階層第一段階を明確に） ---- */
+    .stTabs [data-baseweb="tab-list"]{
+      border-bottom-width:1px !important;
+    }
+    .stTabs [aria-selected="true"]{
+      border-bottom-width:3px !important;
+      background:linear-gradient(180deg, transparent 0%, rgba(14,165,233,0.06) 100%) !important;
+    }
+
+    /* ---- 7. タップターゲット 44×44 最小保証（モバイル） ---- */
+    @media (max-width: 768px) {
+      .stTabs [data-baseweb="tab"]{
+        min-height:44px;
+        padding:0.75rem 1rem;
+      }
+      .chip{
+        min-height:36px;
+        padding:0.5rem 0.9rem;
+      }
+      .mck-button{
+        min-height:44px;
+      }
+    }
+
+    /* ---- 8. 表の uppercase 解除 + 本文サイズ統一 ---- */
+    .stDataFrame thead th{
+      text-transform:none !important;
+      letter-spacing:0.02em !important;
+      font-size:0.9rem !important;
+    }
+
+    /* ---- 9. 情報密度のリズム統一（セクション間余白を 8px grid に揃える） ---- */
+    .element-container{ margin-bottom:0.75rem; }
+    .mck-section-header{ margin-top:2rem; }
+    .mck-section-header:first-of-type{ margin-top:1rem; }
+
+    /* ---- 10. 動きに敏感なユーザーへの配慮（prefers-reduced-motion） ---- */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after{
+        animation-duration:0.001ms !important;
+        animation-iteration-count:1 !important;
+        transition-duration:0.001ms !important;
+        scroll-behavior:auto !important;
+      }
+      .mck-alert:hover,
+      .mck-metric-card:hover,
+      [data-testid="stMetric"]:hover,
+      .dashboard-chart-card:hover,
+      .stButton>button:hover{
+        transform:none !important;
+      }
+    }
+
+    /* ---- 11. tooltip z-index を最前面に（カードの overflow:hidden 回避） ---- */
+    .has-tooltip{ position:relative; }
+    .mck-metric-card.has-tooltip{ overflow:visible !important; }
+    .mck-metric-card.has-tooltip .mck-metric-card__info{
+      position:relative;
+      z-index:10;
+    }
+
+    /* ---- 12. 極小テキストの下限 12px 保証（可読性） ---- */
+    small, .text-small,
+    .mck-metric-card__footnote,
+    .mck-hero__highlight-desc small,
+    .tour-banner__progress{
+      font-size:max(0.78rem, 12px) !important;
+    }
+
+    /* ---- 13. 主役ボタンの色ブランド統一（重複定義を accent に寄せる） ---- */
+    .stButton>button[kind="primary"],
+    .stButton>button[data-testid="baseButton-primary"]{
+      background:var(--accent) !important;
+      border-color:var(--accent) !important;
+      color:#ffffff !important;
+    }
+    .stButton>button[kind="primary"]:hover,
+    .stButton>button[data-testid="baseButton-primary"]:hover{
+      background:var(--accent-strong) !important;
+      border-color:var(--accent-strong) !important;
+    }
+
+    /* ---- 14. ヒーロー・ホバーの意図整理（非リンクに transform 付けない） ---- */
+    .mck-hero__stat,
+    .mck-hero__highlight{
+      cursor:default;
+    }
+
+    /* ---- 15. Plotly chart のモードバー視認性（小画面対応） ---- */
+    .modebar{
+      background:rgba(255,255,255,0.9) !important;
+      border-radius:6px !important;
+      padding:2px !important;
+    }
+    :root.dark .modebar{
+      background:rgba(11,18,32,0.9) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ===== UI/UX Polish Layer Round 2 (v6.2 persona-driven) =====
+# TR-Educator / TR-Support / Anti / MI-power / TR-Operator 視点の2周目改善。
+# 印刷対応・中間ブレークポイント・空状態強化・A11y 補完。
+st.markdown(
+    """
+    <style>
+    /* ---- R2-1. 中間ブレークポイント（640-1024px タブレット対応） ----
+       現状 768/880/920px でのみレイアウト切替で、タブレット縦〜横で
+       グリッドが崩れる・読みにくい中間ゾーンを補う。Anti視点指摘。 */
+    @media (min-width: 640px) and (max-width: 1023px) {
+      .dashboard-kpi-grid,
+      .dashboard-kgi-grid{
+        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      }
+      .mck-hero__stats,
+      .mck-hero__highlights{
+        grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+      }
+      .block-container{
+        padding:var(--space-2) var(--space-3) !important;
+      }
+    }
+
+    /* ---- R2-2. 印刷ビュー（PDF出力・経営会議資料化） ----
+       MI-power-user / TR-Sales 視点: 分析結果を印刷→PDFで共有する需要。
+       サイドバー・ヒーロー装飾を非表示、ダッシュボードのみに整理。 */
+    @media print {
+      [data-testid="stSidebar"],
+      [data-testid="stHeader"],
+      .mobile-nav-toggle,
+      .nav-overlay,
+      .tour-banner,
+      .stButton,
+      .mck-hero__actions,
+      .modebar{
+        display:none !important;
+      }
+      body, .stApp, [data-testid="stAppViewContainer"]{
+        background:#ffffff !important;
+        color:#000000 !important;
+      }
+      .mck-hero{
+        background:#ffffff !important;
+        color:#000000 !important;
+        box-shadow:none !important;
+        border:1px solid #cccccc !important;
+        page-break-after:avoid;
+      }
+      .mck-hero h1,
+      .mck-hero__lead,
+      .mck-hero__eyebrow,
+      .mck-hero__stat-value,
+      .mck-hero__stat-label,
+      .mck-hero__highlight-title,
+      .mck-hero__highlight-desc{
+        color:#000000 !important;
+      }
+      [data-testid="stMetric"],
+      .mck-metric-card,
+      .dashboard-kpi-card,
+      .dashboard-kgi-card,
+      .dashboard-chart-card,
+      .mini-chart-card{
+        box-shadow:none !important;
+        border:1px solid #cccccc !important;
+        page-break-inside:avoid;
+      }
+      .stTabs [data-baseweb="tab-panel"]{
+        padding:0 !important;
+      }
+      a[href]::after{
+        content:"";
+      }
+      h1, h2, h3{
+        page-break-after:avoid;
+      }
+      .block-container{
+        max-width:none !important;
+        padding:0 !important;
+      }
+    }
+
+    /* ---- R2-3. 空状態・警告状態の視覚強化 ----
+       TR-Support 視点: 「データがありません」等のメッセージに次アクションを
+       視覚的に誘導する余地がある。`st.info` `st.warning` の callout 強化。 */
+    [data-testid="stAlert"]{
+      border-radius:12px !important;
+      border-left-width:4px !important;
+      padding:1rem 1.25rem !important;
+      box-shadow:0 2px 6px rgba(11,31,59,0.06) !important;
+    }
+    [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p{
+      line-height:1.6 !important;
+      margin-bottom:0.25rem !important;
+    }
+    [data-testid="stAlert"] [data-testid="stMarkdownContainer"] p:last-child{
+      margin-bottom:0 !important;
+    }
+
+    /* ---- R2-4. Skip-to-content リンク（A11y: WCAG 2.4.1 Bypass Blocks） ----
+       キーボードユーザーがサイドバーを毎回タブ移動する負担を除く。
+       Tab フォーカス時のみ出現するスキップリンク。 */
+    .skip-to-content{
+      position:absolute;
+      top:-40px;
+      left:0;
+      background:var(--accent, #0EA5E9);
+      color:#ffffff;
+      padding:0.75rem 1.25rem;
+      z-index:10000;
+      border-radius:0 0 8px 0;
+      font-weight:700;
+      text-decoration:none;
+      font-size:0.95rem;
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    }
+    .skip-to-content:focus,
+    .skip-to-content:focus-visible{
+      top:0;
+      outline:3px solid rgba(255,255,255,0.6);
+      outline-offset:-6px;
+    }
+
+    /* ---- R2-5. scroll到達時のセクションハイライト（情報再発見支援） ----
+       TR-Operator 視点: データ更新でページがリロードされたとき、
+       どこを見ていたか即座にわかるよう :target のセクションをソフトハイライト。 */
+    section[id]:target,
+    h2[id]:target,
+    h3[id]:target{
+      animation:mck-target-pulse 1.8s ease-out 1;
+    }
+    @keyframes mck-target-pulse {
+      0%   { background:rgba(14,165,233,0.0); }
+      30%  { background:rgba(14,165,233,0.12); }
+      100% { background:rgba(14,165,233,0.0); }
+    }
+
+    /* ---- R2-6. Skeleton loader（将来拡張用・チャート読み込み中表示） ---- */
+    .mck-skeleton{
+      background:linear-gradient(
+        90deg,
+        rgba(226,232,240,0.4) 0%,
+        rgba(226,232,240,0.7) 50%,
+        rgba(226,232,240,0.4) 100%
+      );
+      background-size:200% 100%;
+      border-radius:8px;
+      animation:mck-skeleton-shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes mck-skeleton-shimmer {
+      0%   { background-position:200% 0; }
+      100% { background-position:-200% 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .mck-skeleton{ animation:none; background:rgba(226,232,240,0.6); }
+    }
+
+    /* ---- R2-7. 「戻る/進む」や「開閉」系 Streamlit ウィジェットの A11y ----
+       expander (st.expander) がアクセシブルに閉じ直せるようフォーカスリング追加。 */
+    [data-testid="stExpander"] summary:focus-visible,
+    [data-testid="stExpander"] details summary:focus-visible{
+      outline:2px solid var(--focus, #3b82f6) !important;
+      outline-offset:3px !important;
+      border-radius:6px;
+    }
+    [data-testid="stExpander"] > details{
+      border-radius:12px !important;
+      border:1px solid var(--border) !important;
+      background:var(--panel) !important;
+      box-shadow:0 1px 2px rgba(11,31,59,0.04);
+    }
+    [data-testid="stExpander"] > details[open]{
+      box-shadow:0 4px 12px rgba(11,31,59,0.08);
+    }
+
+    /* ---- R2-8. ツールチップを長文でも読みやすく ----
+       TR-Educator 視点: KPI 説明ツールチップが狭すぎて途中改行される。 */
+    .has-tooltip::after{
+      max-width:min(320px, 90vw) !important;
+      text-align:left !important;
+      line-height:1.5 !important;
+    }
+
+    /* ---- R2-9. セクション見出しの視覚的ヒエラルキー統一 ----
+       h2/h3 の色・サイズが箇所によってバラつく。アンカー付き見出しで揃える。 */
+    h2[id],
+    h3[id]{
+      scroll-margin-top:88px;
+    }
+
+    /* ---- R2-10. 長い日本語テキストの見やすさ ----
+       行頭禁則・単語分割のケアと、見出し直下段落のスペース確保。 */
+    .mck-hero__lead,
+    .tour-banner__desc,
+    .mck-alert__content p{
+      text-wrap:pretty;
+      word-break:auto-phrase;
+      hanging-punctuation:allow-end;
+    }
+
+    /* ---- R2-11. 選択時テキストのブランド色（細部のブランド体験） ---- */
+    ::selection{
+      background:rgba(14,165,233,0.25);
+      color:var(--text-pri, #0a1628);
+    }
+
+    /* ---- R3-1. Empty State パターン（データ未取込時の行動誘導） ----
+       require_data() が呼ばれたとき、st.stop() の前に表示。
+       TR-Educator / MI-first-time 視点: 「何をすればよいか」を明示。 */
+    .mck-empty-state{
+      background:var(--panel, #ffffff);
+      border:1px solid var(--border, #e2e8f0);
+      border-radius:20px;
+      padding:3rem 2rem;
+      margin:2rem auto;
+      max-width:640px;
+      text-align:center;
+      box-shadow:0 12px 32px rgba(11,31,59,0.08);
+      animation:mck-fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .mck-empty-state__icon{
+      font-size:3.5rem;
+      line-height:1;
+      margin-bottom:1rem;
+      filter:drop-shadow(0 8px 16px rgba(14,165,233,0.25));
+    }
+    .mck-empty-state__title{
+      font-size:1.5rem !important;
+      font-weight:700 !important;
+      color:var(--ink, #0a1628) !important;
+      margin:0 0 0.75rem !important;
+      line-height:1.35 !important;
+    }
+    .mck-empty-state__desc{
+      color:var(--muted, #475569);
+      font-size:1rem;
+      line-height:1.65;
+      margin:0 0 1.5rem;
+    }
+    .mck-empty-state__steps{
+      list-style:none;
+      padding:1.25rem 1.5rem;
+      margin:1.5rem auto;
+      max-width:420px;
+      background:var(--surface-1, #f8fafc);
+      border-radius:12px;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
+      gap:0.65rem;
+    }
+    .mck-empty-state__steps li{
+      color:var(--ink-subtle, #1e293b);
+      font-size:0.95rem;
+      line-height:1.5;
+      padding-left:0.25rem;
+    }
+    .mck-empty-state__steps strong{
+      display:inline-block;
+      min-width:5rem;
+      color:var(--accent-strong, #0369a1);
+      font-weight:700;
+    }
+    .mck-empty-state__hint{
+      color:var(--muted, #475569);
+      font-size:0.88rem;
+      line-height:1.55;
+      margin:1rem 0 0;
+      padding:0.75rem 1rem;
+      background:rgba(14,165,233,0.06);
+      border-left:3px solid var(--accent, #0EA5E9);
+      border-radius:6px;
+      text-align:left;
+    }
+    @media (max-width: 640px) {
+      .mck-empty-state{
+        padding:2rem 1.25rem;
+        margin:1rem auto;
+        border-radius:16px;
+      }
+      .mck-empty-state__icon{ font-size:2.5rem; }
+      .mck-empty-state__title{ font-size:1.25rem !important; }
+    }
+    </style>
+
+    <a class="skip-to-content" href="#main-content">本文へスキップ</a>
+    <div id="main-content" tabindex="-1" style="position:absolute;left:-1px;top:0;width:1px;height:1px;"></div>
+    """,
+    unsafe_allow_html=True,
+)
+
 # ===== Elegant（品格）UI ON/OFF & Language Selector =====
 if "elegant_on" not in st.session_state:
     st.session_state["elegant_on"] = True
@@ -4483,6 +4972,27 @@ def clip_text(value: str, width: int = 220) -> str:
 # ---------------- Helpers ----------------
 def require_data():
     if st.session_state.data_year is None or st.session_state.data_monthly is None:
+        st.markdown(
+            """
+            <div class="mck-empty-state" role="status" aria-live="polite">
+              <div class="mck-empty-state__icon" aria-hidden="true">📊</div>
+              <h2 class="mck-empty-state__title">分析を始めるにはデータが必要です</h2>
+              <p class="mck-empty-state__desc">
+                CSV/Excelを取り込むか、サンプルデータで機能を体験できます。
+                サイドバーの「データ入力」からどうぞ。
+              </p>
+              <ul class="mck-empty-state__steps">
+                <li><strong>ステップ1</strong>　「データ管理」でテンプレートを確認</li>
+                <li><strong>ステップ2</strong>　CSV/Excelをアップロード</li>
+                <li><strong>ステップ3</strong>　品質チェックを経てダッシュボードへ</li>
+              </ul>
+              <p class="mck-empty-state__hint">
+                💡 初めての方は「サンプルデータで試す」が最短です（数秒で全機能が動作確認できます）。
+              </p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.stop()
 
 
